@@ -1,4 +1,4 @@
-module github.com/your-scope/whatsmeow-node-bridge
+module github.com/vinikjkkj/whatsmeow-node
 
 go 1.24.0
 
