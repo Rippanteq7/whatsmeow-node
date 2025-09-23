@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/lib/pq"
 )
 
 type handle uint64
@@ -40,6 +41,11 @@ type logOptions struct {
 	Database string `json:"database"`
 	Client   string `json:"client"`
 	Color    bool   `json:"color"`
+}
+
+func init() {
+    // Enable Postgres array support by wiring the wrapper expected by whatsmeow's sqlstore
+    sqlstore.PostgresArrayWrapper = pq.Array
 }
 
 var (
@@ -109,6 +115,24 @@ func WmClientIsLoggedIn(input *C.char) *C.char {
 		return fail(errors.New("client handle not found"))
 	}
 	return success(map[string]any{"isLoggedIn": cli.IsLoggedIn()})
+}
+
+//export WmClientHasStoreID
+func WmClientHasStoreID(input *C.char) *C.char {
+    var payload struct {
+        Client uint64 `json:"client"`
+    }
+    if err := json.Unmarshal([]byte(C.GoString(input)), &payload); err != nil {
+        return fail(fmt.Errorf("invalid json: %w", err))
+    }
+    clientsMu.RLock()
+    cli := clients[handle(payload.Client)]
+    clientsMu.RUnlock()
+    if cli == nil {
+        return fail(errors.New("client handle not found"))
+    }
+    has := !cli.Store.GetJID().IsEmpty()
+    return success(map[string]any{"has": has})
 }
 
 //export WmClientDisconnect
@@ -622,64 +646,64 @@ func WmContainerGetFirstDevice(input *C.char) *C.char {
 
 //export WmContainerGetAllDevices
 func WmContainerGetAllDevices(input *C.char) *C.char {
-    var req withHandle
-    if err := json.Unmarshal([]byte(C.GoString(input)), &req); err != nil {
-        return fail(fmt.Errorf("invalid json: %w", err))
-    }
-    containersMu.RLock()
-    cont := containers[handle(req.Handle)]
-    containersMu.RUnlock()
-    if cont == nil {
-        return fail(errors.New("container handle not found"))
-    }
-    ctx := context.Background()
-    devs, err := cont.GetAllDevices(ctx)
-    if err != nil {
-        return fail(err)
-    }
-    handles := make([]uint64, 0, len(devs))
-    devicesMu.Lock()
-    for _, d := range devs {
-        h := newHandle()
-        devices[h] = d
-        handles = append(handles, uint64(h))
-    }
-    devicesMu.Unlock()
-    return success(map[string]any{"handles": handles})
+	var req withHandle
+	if err := json.Unmarshal([]byte(C.GoString(input)), &req); err != nil {
+		return fail(fmt.Errorf("invalid json: %w", err))
+	}
+	containersMu.RLock()
+	cont := containers[handle(req.Handle)]
+	containersMu.RUnlock()
+	if cont == nil {
+		return fail(errors.New("container handle not found"))
+	}
+	ctx := context.Background()
+	devs, err := cont.GetAllDevices(ctx)
+	if err != nil {
+		return fail(err)
+	}
+	handles := make([]uint64, 0, len(devs))
+	devicesMu.Lock()
+	for _, d := range devs {
+		h := newHandle()
+		devices[h] = d
+		handles = append(handles, uint64(h))
+	}
+	devicesMu.Unlock()
+	return success(map[string]any{"handles": handles})
 }
 
 //export WmContainerGetDevice
 func WmContainerGetDevice(input *C.char) *C.char {
-    var req struct {
-        Handle uint64 `json:"handle"`
-        JID    string `json:"jid"`
-    }
-    if err := json.Unmarshal([]byte(C.GoString(input)), &req); err != nil {
-        return fail(fmt.Errorf("invalid json: %w", err))
-    }
-    containersMu.RLock()
-    cont := containers[handle(req.Handle)]
-    containersMu.RUnlock()
-    if cont == nil {
-        return fail(errors.New("container handle not found"))
-    }
-    jid, err := types.ParseJID(req.JID)
-    if err != nil {
-        return fail(err)
-    }
-    ctx := context.Background()
-    dev, err := cont.GetDevice(ctx, jid)
-    if err != nil {
-        return fail(err)
-    }
-    if dev == nil {
-        return success(map[string]any{"found": false})
-    }
-    h := newHandle()
-    devicesMu.Lock()
-    devices[h] = dev
-    devicesMu.Unlock()
-    return success(map[string]any{"handle": uint64(h), "found": true})
+	var req struct {
+		Handle uint64 `json:"handle"`
+		JID    string `json:"jid"`
+	}
+	if err := json.Unmarshal([]byte(C.GoString(input)), &req); err != nil {
+		return fail(fmt.Errorf("invalid json: %w", err))
+	}
+	containersMu.RLock()
+	cont := containers[handle(req.Handle)]
+	containersMu.RUnlock()
+	if cont == nil {
+		return fail(errors.New("container handle not found"))
+	}
+	jid, err := types.ParseJID(req.JID)
+	if err != nil {
+		return fail(err)
+	}
+	ctx := context.Background()
+	dev, err := cont.GetDevice(ctx, jid)
+	if err != nil {
+		return fail(err)
+	}
+	if dev == nil {
+		return success(map[string]any{"found": false})
+	}
+	h := newHandle()
+	devicesMu.Lock()
+	devices[h] = dev
+	devicesMu.Unlock()
+	return success(map[string]any{"handle": uint64(h), "found": true})
 }
 
 //export WmNewClient

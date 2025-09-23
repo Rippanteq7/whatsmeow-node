@@ -12,29 +12,38 @@ import type { proto } from './types.js'
 //
 // For methods not listed here, client.call<string>(...) is still available with loose typing.
 export interface ClientMethodMap {
-  // Messaging
-  SendMessage: (to: JID, message: proto.WAWebProtobufsE2E.IMessage, extra?: SendRequestExtra) => SendResponse
-  GenerateMessageID: () => string
-  BuildRevoke: (chat: JID, sender: JID, id: string) => any
+    // Messaging
+    SendMessage: (
+        to: JID,
+        message: proto.WAWebProtobufsE2E.IMessage,
+        extra?: SendRequestExtra
+    ) => SendResponse
+    GenerateMessageID: () => string
+    BuildRevoke: (chat: JID, sender: JID, id: string) => any
 
-  // Presence
-  SendPresence: (state: 'available' | 'unavailable') => {}
-  SubscribePresence: (jid: JID) => {}
-  SendChatPresence: (jid: JID, state: 'composing' | 'paused', media?: '' | 'audio') => {}
+    // Presence
+    SendPresence: (state: 'available' | 'unavailable') => {}
+    SubscribePresence: (jid: JID) => {}
+    SendChatPresence: (jid: JID, state: 'composing' | 'paused', media?: '' | 'audio') => {}
 
-  // Groups
-  GetGroupInviteLink: (jid: JID, reset?: boolean) => string
+    // Groups
+    GetGroupInviteLink: (jid: JID, reset?: boolean) => string
 
-  // Connection helpers
-  WaitForConnection: (timeoutMs: number) => boolean
-  IsLoggedIn: () => boolean
+    // Connection helpers
+    WaitForConnection: (timeoutMs: number) => boolean
+    IsLoggedIn: () => boolean
 
-  // Pairing code
-  PairPhone: (phone: string, showPushNotification: boolean, clientType: number, clientDisplayName: string) => string
+    // Pairing code
+    PairPhone: (
+        phone: string,
+        showPushNotification: boolean,
+        clientType: number,
+        clientDisplayName: string
+    ) => string
 
-  // Logout
-  Logout: () => {}
+    // Logout
+    Logout: () => {}
 
-  // Index signature for other methods (will be refined by codegen in the future)
-  [method: string]: (...args: any[]) => any
+    // Index signature for other methods (will be refined by codegen in the future)
+    [method: string]: (...args: any[]) => any
 }

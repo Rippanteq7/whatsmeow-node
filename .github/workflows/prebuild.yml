@@ -1,0 +1,137 @@
+name: Build and Release Prebuilt Natives
+
+on:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
+
+jobs:
+    linux-gnu-x64:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '>=1.22'
+            - name: Install build deps
+              run: sudo apt-get update && sudo apt-get install -y build-essential
+            - name: Build c-shared
+              working-directory: whatsmeow-node/bridge-go
+              run: |
+                  go mod tidy
+                  go build -buildmode=c-shared -o ../build/whatsmeow.so .
+            - name: Rename asset
+              run: mv whatsmeow-node/build/whatsmeow.so whatsmeow-linux-x64-gnu.so
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: whatsmeow-linux-x64-gnu.so
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    linux-musl-x64:
+        runs-on: ubuntu-latest
+        container: alpine:3.20
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install build deps
+              run: apk add --no-cache go build-base git
+            - name: Build c-shared
+              working-directory: whatsmeow-node/bridge-go
+              run: |
+                  go env -w CGO_ENABLED=1
+                  go mod tidy
+                  go build -buildmode=c-shared -o ../build/whatsmeow.so .
+            - name: Rename asset
+              run: mv whatsmeow-node/build/whatsmeow.so whatsmeow-linux-x64-musl.so
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: whatsmeow-linux-x64-musl.so
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    macos-x64:
+        runs-on: macos-13
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '>=1.22'
+            - name: Build c-shared
+              working-directory: whatsmeow-node/bridge-go
+              run: |
+                  go mod tidy
+                  go build -buildmode=c-shared -o ../build/whatsmeow.dylib .
+            - name: Rename asset
+              run: mv whatsmeow-node/build/whatsmeow.dylib whatsmeow-darwin-x64.dylib
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: whatsmeow-darwin-x64.dylib
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    macos-arm64:
+        runs-on: macos-14
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '>=1.22'
+            - name: Build c-shared
+              working-directory: whatsmeow-node/bridge-go
+              run: |
+                  go mod tidy
+                  go build -buildmode=c-shared -o ../build/whatsmeow.dylib .
+            - name: Rename asset
+              run: mv whatsmeow-node/build/whatsmeow.dylib whatsmeow-darwin-arm64.dylib
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: whatsmeow-darwin-arm64.dylib
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    windows-x64:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: '>=1.22'
+            - uses: msys2/setup-msys2@v2
+              with:
+                  msystem: MINGW64
+                  install: >-
+                      mingw-w64-x86_64-gcc
+                      git
+            - name: Build c-shared
+              shell: bash
+              working-directory: whatsmeow-node/bridge-go
+              env:
+                  CGO_ENABLED: '1'
+                  CC: x86_64-w64-mingw32-gcc
+              run: |
+                  go mod tidy
+                  go build -buildmode=c-shared -o ../build/whatsmeow.dll .
+            - name: Rename asset
+              shell: bash
+              run: mv whatsmeow-node/build/whatsmeow.dll whatsmeow-win32-x64.dll
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: whatsmeow-win32-x64.dll
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

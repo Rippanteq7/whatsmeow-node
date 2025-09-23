@@ -1,36 +1,42 @@
 {
-  "name": "@whatsmeow/napi",
-  "version": "0.1.0",
-  "description": "TypeScript N-API bindings for go.mau.fi/whatsmeow via Go c-shared bridge",
-  "license": "MPL-2.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "build/whatsmeow.dll",
-    "build/whatsmeow.dylib",
-    "build/whatsmeow.so"
-  ],
-  "scripts": {
-    "build:go": "go mod tidy -C ./bridge-go && go build -C ./bridge-go -buildmode=c-shared -o ../build/whatsmeow.dll .",
-    "gen:protos": "node ./scripts/generate-protos.js",
-    "build:ts": "tsc",
-    "build": "npm run build:go && npm run build:ts",
-    "clean": "rimraf dist build"
-  },
-  "dependencies": {
-    "koffi": "^2.9.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.5.4",
-    "fast-glob": "^3.3.2",
-    "protobufjs": "^7.5.4",
-    "protobufjs-cli": "^1.1.1",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.6.2"
-  },
-  "engines": {
-    "node": ">=18"
-  }
+    "name": "whatsmeow-node",
+    "version": "0.1.0",
+    "description": "TypeScript N-API bindings for go.mau.fi/whatsmeow via Go c-shared bridge",
+    "license": "MPL-2.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "repository": "https://github.com/vinikjkkj/whatsmeow-node",
+    "files": [
+        "dist",
+        "prebuilt",
+        "proto",
+        "scripts/*.mjs",
+        "build/whatsmeow.dll",
+        "build/whatsmeow.dylib",
+        "build/whatsmeow.so"
+    ],
+    "scripts": {
+        "build:go": "node ./scripts/build-go.mjs",
+        "gen:protos": "node ./scripts/generate-protos.mjs",
+        "build:ts": "tsc",
+        "build": "npm run build:go && npm run build:ts",
+        "postinstall": "node ./scripts/postinstall.mjs",
+        "clean": "rimraf dist build"
+    },
+    "dependencies": {
+        "koffi": "^2.9.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.5.4",
+        "fast-glob": "^3.3.2",
+        "prettier": "^3.6.2",
+        "protobufjs": "^7.5.4",
+        "protobufjs-cli": "^1.1.1",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.6.2"
+    },
+    "engines": {
+        "node": ">=18"
+    }
 }
