@@ -1,6 +1,6 @@
 {
     "name": "whatsmeow-node",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "TypeScript N-API bindings for go.mau.fi/whatsmeow via Go c-shared bridge",
     "license": "MPL-2.0",
     "type": "module",
