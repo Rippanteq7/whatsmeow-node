@@ -1,0 +1,3 @@
+[submodule "whatsmeow"]
+	path = whatsmeow
+	url = https://github.com/tulir/whatsmeow
