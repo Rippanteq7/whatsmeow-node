@@ -1,6 +1,6 @@
 {
     "name": "whatsmeow-node",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "TypeScript N-API bindings for go.mau.fi/whatsmeow via Go c-shared bridge",
     "license": "MPL-2.0",
     "type": "module",
@@ -11,10 +11,7 @@
         "dist",
         "prebuilt",
         "proto",
-        "scripts/*.mjs",
-        "build/whatsmeow.dll",
-        "build/whatsmeow.dylib",
-        "build/whatsmeow.so"
+        "scripts/*.mjs"
     ],
     "scripts": {
         "build:go": "node ./scripts/build-go.mjs",
