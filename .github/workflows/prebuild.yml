@@ -12,6 +12,8 @@ jobs:
     container:
       image: debian:11
       options: --user root
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - run: |
           apt-get update
@@ -40,6 +42,8 @@ jobs:
   linux-musl-x64:
     runs-on: ubuntu-latest
     container: alpine:3.20
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - run: apk add --no-cache build-base git
       - uses: actions/setup-go@v5
@@ -65,6 +69,8 @@ jobs:
 
   macos-x64:
     runs-on: macos-13
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,6 +94,8 @@ jobs:
 
   macos-arm64:
     runs-on: macos-14
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@v4
         with:
@@ -111,6 +119,8 @@ jobs:
 
   windows-x64:
     runs-on: windows-latest
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@v4
         with:
