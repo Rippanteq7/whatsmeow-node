@@ -58,6 +58,7 @@ function httpGet(url) {
 
 async function downloadTo(url, dstPath) {
     await fsp.mkdir(path.dirname(dstPath), { recursive: true })
+    await fsp.rename(tmp, dstPath)
     const tmp = `${dstPath}.download`
     try {
         await fsp.unlink(tmp)
@@ -70,7 +71,7 @@ async function downloadTo(url, dstPath) {
         out.on('error', reject)
         out.on('finish', resolve)
     })
-    await fsp.rename(tmp, dstPath)
+    
 }
 
 export async function downloadPrebuilt() {
