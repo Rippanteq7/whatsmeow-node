@@ -19,8 +19,7 @@
         "build:ts": "tsc",
         "build": "npm run build:go && npm run build:ts",
         "postinstall": "node ./scripts/postinstall.mjs",
-        "clean": "rimraf dist build",
-        "prepare": "npm run build"
+        "clean": "rimraf dist build"
     },
     "dependencies": {
         "protobufjs": "^7.5.4",
