@@ -6,7 +6,7 @@
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "repository": "https://github.com/vinikjkkj/whatsmeow-node",
+    "repository": "https://github.com/pluvism/whatsmeow-node",
     "files": [
         "dist",
         "prebuilt",
