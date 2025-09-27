@@ -27,7 +27,7 @@ function defaultRepoSlug(pkg) {
         if (m) return m[1]
     }
     // Fallback
-    return 'vinikjkkj/whatsmeow-node'
+    return 'pluvism/whatsmeow-node'
 }
 
 function buildBaseURL(pkg) {
