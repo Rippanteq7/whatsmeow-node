@@ -17,7 +17,8 @@
         "build:go": "node ./scripts/build-go.mjs",
         "gen:protos": "node ./scripts/generate-protos.mjs",
         "build:ts": "tsc",
-        "build": "npm run build:go && npm run build:ts",
+        "build:all": "npm run build:go && npm run build:ts",
+        "prepare": "npm run build:all",
         "postinstall": "node ./scripts/postinstall.mjs",
         "clean": "rimraf dist build"
     },
