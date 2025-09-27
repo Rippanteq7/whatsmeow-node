@@ -16,8 +16,6 @@ jobs:
       GOFLAGS: -buildvcs=false
     steps:
       - run: |
-          go env -w GOFLAGS=-buildvcs=false
-      - run: |
           apt-get update
           apt-get install -y git ca-certificates build-essential
       - uses: actions/checkout@v4
@@ -30,6 +28,7 @@ jobs:
           go-version: '>=1.24'
       - working-directory: bridge-go
         run: |
+          go env -w GOFLAGS=-buildvcs=false
           go mod tidy
           go build -buildmode=c-shared -o ../build/whatsmeow.so .
       - run: mv build/whatsmeow.so whatsmeow-linux-x64-gnu.so
