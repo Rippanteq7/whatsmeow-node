@@ -6,7 +6,40 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Set Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Update submodules
+        run: |
+          git submodule foreach --recursive git checkout bypass
+          git submodule foreach --recursive git pull origin bypass
+      - name: Commit and push if submodule updated
+        run: |
+          if ! git diff --quiet HEAD; then
+          echo "Submodule(s) updated. Committing..."
+          git add .
+          git commit -m "chore(submodules): update"
+          git push origin HEAD:refs/heads/${{ github.ref_name }}
+          echo "Submodule updated & pushed to refs/heads/${{ github.ref_name }}"
+          else
+          echo "No submodule changes detected."
+          fi
+        shell: bash
+
   linux-gnu-x64:
     runs-on: ubuntu-22.04
     container:
