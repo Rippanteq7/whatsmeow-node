@@ -842,7 +842,8 @@ func WmClientSendPresence(input *C.char) *C.char {
 	if cli == nil {
 		return fail(errors.New("client handle not found"))
 	}
-	if err := cli.SendPresence(types.Presence(payload.State)); err != nil {
+	ctx := context.Background()
+	if err := cli.SendPresence(ctx, types.Presence(payload.State)); err != nil {
 		return fail(err)
 	}
 	return success(map[string]any{})
@@ -867,7 +868,8 @@ func WmClientSubscribePresence(input *C.char) *C.char {
 	if err != nil {
 		return fail(err)
 	}
-	if err := cli.SubscribePresence(jid); err != nil {
+	ctx := context.Background()
+	if err := cli.SubscribePresence(ctx, jid); err != nil {
 		return fail(err)
 	}
 	return success(map[string]any{})
@@ -894,7 +896,8 @@ func WmClientSendChatPresence(input *C.char) *C.char {
 	if err != nil {
 		return fail(err)
 	}
-	if err := cli.SendChatPresence(jid, types.ChatPresence(payload.State), types.ChatPresenceMedia(payload.Media)); err != nil {
+	ctx := context.Background()
+	if err := cli.SendChatPresence(ctx, jid, types.ChatPresence(payload.State), types.ChatPresenceMedia(payload.Media)); err != nil {
 		return fail(err)
 	}
 	return success(map[string]any{})
@@ -1029,7 +1032,8 @@ func WmClientGetGroupInviteLink(input *C.char) *C.char {
 	if err != nil {
 		return fail(err)
 	}
-	link, err := cli.GetGroupInviteLink(jid, payload.Reset)
+	ctx := context.Background()
+	link, err := cli.GetGroupInviteLink(ctx, jid, payload.Reset)
 	if err != nil {
 		return fail(err)
 	}
