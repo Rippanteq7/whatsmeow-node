@@ -73,6 +73,71 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
+  linux-gnu-arm64:
+    runs-on: ubuntu-22.04
+    env:
+      GOFLAGS: -buildvcs=false
+      CGO_ENABLED: '1'
+      GOOS: linux
+      GOARCH: arm64
+      CC: aarch64-linux-gnu-gcc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - working-directory: bridge-go
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/whatsmeow.so .
+      - run: mv build/whatsmeow.so whatsmeow-linux-arm64-gnu.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-linux-arm64-gnu.so
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  linux-gnu-armv7:
+    runs-on: ubuntu-22.04
+    env:
+      GOFLAGS: -buildvcs=false
+      CGO_ENABLED: '1'
+      GOOS: linux
+      GOARCH: arm
+      GOARM: '7'
+      CC: arm-linux-gnueabihf-gcc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - working-directory: bridge-go
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/whatsmeow.so .
+      - run: mv build/whatsmeow.so whatsmeow-linux-arm-gnueabihf.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-linux-arm-gnueabihf.so
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
   linux-musl-x64:
     runs-on: ubuntu-latest
     container: alpine:3.20
@@ -101,8 +166,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
+  linux-musl-arm64:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Build in Alpine ARM64 container
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            alpine:3.20 sh -c "
+              apk add --no-cache build-base git go &&
+              cd bridge-go &&
+              go env -w CGO_ENABLED=1 GOFLAGS=-buildvcs=false &&
+              go mod tidy &&
+              go build -buildmode=c-shared -o ../build/whatsmeow.so .
+            "
+      - run: mv build/whatsmeow.so whatsmeow-linux-arm64-musl.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-linux-arm64-musl.so
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
   macos-x64:
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       GOFLAGS: -buildvcs=false
     steps:
@@ -182,6 +279,211 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: whatsmeow-win32-x64.dll
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  windows-x86:
+    runs-on: windows-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          install: >-
+            mingw-w64-i686-gcc
+            git
+      - shell: bash
+        working-directory: bridge-go
+        env:
+          CGO_ENABLED: '1'
+          GOOS: windows
+          GOARCH: '386'
+          CC: i686-w64-mingw32-gcc
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/whatsmeow.dll .
+      - shell: bash
+        run: mv build/whatsmeow.dll whatsmeow-win32-ia32.dll
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-win32-ia32.dll
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  windows-arm64:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - name: Install llvm-mingw cross-compiler
+        run: |
+          curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20241217/llvm-mingw-20241217-ucrt-ubuntu-20.04-x86_64.tar.xz
+          tar -xf llvm-mingw-*.tar.xz
+          echo "$PWD/llvm-mingw-20241217-ucrt-ubuntu-20.04-x86_64/bin" >> $GITHUB_PATH
+      - working-directory: bridge-go
+        env:
+          CGO_ENABLED: '1'
+          GOOS: windows
+          GOARCH: arm64
+          CC: aarch64-w64-mingw32-gcc
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/whatsmeow.dll .
+      - run: mv build/whatsmeow.dll whatsmeow-win32-arm64.dll
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-win32-arm64.dll
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  freebsd-x64:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - working-directory: bridge-go
+        env:
+          CGO_ENABLED: '0'
+          GOOS: freebsd
+          GOARCH: amd64
+        run: |
+          go mod tidy
+          go build -o ../build/whatsmeow-freebsd .
+      - run: mv build/whatsmeow-freebsd whatsmeow-freebsd-x64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-freebsd-x64
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  android-arm64:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+      - working-directory: bridge-go
+        env:
+          CGO_ENABLED: '1'
+          GOOS: android
+          GOARCH: arm64
+          CC: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/libwhatsmeow.so .
+      - run: mv build/libwhatsmeow.so whatsmeow-android-arm64.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-android-arm64.so
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  android-arm:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+      - working-directory: bridge-go
+        env:
+          CGO_ENABLED: '1'
+          GOOS: android
+          GOARCH: arm
+          GOARM: '7'
+          CC: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi24-clang
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/libwhatsmeow.so .
+      - run: mv build/libwhatsmeow.so whatsmeow-android-arm.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-android-arm.so
+          token: ${{ secrets.GH_PAT }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  android-x64:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+      - working-directory: bridge-go
+        env:
+          CGO_ENABLED: '1'
+          GOOS: android
+          GOARCH: amd64
+          CC: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang
+        run: |
+          go mod tidy
+          go build -buildmode=c-shared -o ../build/libwhatsmeow.so .
+      - run: mv build/libwhatsmeow.so whatsmeow-android-x64.so
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: whatsmeow-android-x64.so
           token: ${{ secrets.GH_PAT }}
           tag_name: ${{ github.ref_name }}
         env:
