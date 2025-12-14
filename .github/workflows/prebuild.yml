@@ -183,7 +183,10 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             alpine:3.20 sh -c "
-              apk add --no-cache build-base git go &&
+              apk add --no-cache build-base git curl &&
+              curl -LO https://go.dev/dl/go1.24.2.linux-arm64.tar.gz &&
+              tar -C /usr/local -xzf go1.24.2.linux-arm64.tar.gz &&
+              export PATH=/usr/local/go/bin:\$PATH &&
               cd bridge-go &&
               go env -w CGO_ENABLED=1 GOFLAGS=-buildvcs=false &&
               go mod tidy &&
@@ -299,16 +302,15 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW32
+          path-type: inherit
           install: >-
             mingw-w64-i686-gcc
-            git
-      - shell: bash
+      - shell: msys2 {0}
         working-directory: bridge-go
         env:
           CGO_ENABLED: '1'
           GOOS: windows
           GOARCH: '386'
-          CC: i686-w64-mingw32-gcc
         run: |
           go mod tidy
           go build -buildmode=c-shared -o ../build/whatsmeow.dll .
@@ -366,21 +368,24 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - name: Build on FreeBSD
+        uses: cross-platform-actions/action@v0.25.0
         with:
-          go-version: '>=1.24'
-      - working-directory: bridge-go
-        env:
-          CGO_ENABLED: '0'
-          GOOS: freebsd
-          GOARCH: amd64
-        run: |
-          go mod tidy
-          go build -o ../build/whatsmeow-freebsd .
-      - run: mv build/whatsmeow-freebsd whatsmeow-freebsd-x64
+          operating_system: freebsd
+          version: '14.1'
+          run: |
+            sudo pkg install -y gcc curl
+            curl -LO https://go.dev/dl/go1.24.2.freebsd-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.24.2.freebsd-amd64.tar.gz
+            export PATH=/usr/local/go/bin:$PATH
+            cd bridge-go
+            go env -w CGO_ENABLED=1 GOFLAGS=-buildvcs=false
+            go mod tidy
+            go build -buildmode=c-shared -o ../build/whatsmeow.so .
+      - run: mv build/whatsmeow.so whatsmeow-freebsd-x64.so
       - uses: softprops/action-gh-release@v2
         with:
-          files: whatsmeow-freebsd-x64
+          files: whatsmeow-freebsd-x64.so
           token: ${{ secrets.GH_PAT }}
           tag_name: ${{ github.ref_name }}
         env:
