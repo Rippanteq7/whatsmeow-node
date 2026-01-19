@@ -166,41 +166,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-  linux-musl-arm64:
-    runs-on: ubuntu-latest
-    env:
-      GOFLAGS: -buildvcs=false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Build in Alpine ARM64 container
-        run: |
-          docker run --rm --platform linux/arm64 \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            alpine:3.20 sh -c "
-              apk add --no-cache build-base git curl &&
-              curl -LO https://go.dev/dl/go1.24.2.linux-arm64.tar.gz &&
-              tar -C /usr/local -xzf go1.24.2.linux-arm64.tar.gz &&
-              export PATH=/usr/local/go/bin:\$PATH &&
-              cd bridge-go &&
-              go env -w CGO_ENABLED=1 GOFLAGS=-buildvcs=false &&
-              go mod tidy &&
-              go build -buildmode=c-shared -o ../build/whatsmeow.so .
-            "
-      - run: mv build/whatsmeow.so whatsmeow-linux-arm64-musl.so
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: whatsmeow-linux-arm64-musl.so
-          token: ${{ secrets.GH_PAT }}
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
   macos-x64:
     runs-on: macos-14
     env:
